@@ -450,34 +450,34 @@ public:
   void touchProperty(FProperty *inProp, ClassDescriptor *inClass, bool inMayForward) {
     // see UnrealType.h for all possible variations
     if (inProp->IsA<FStructProperty>()) {
-      auto structProp = Cast<FStructProperty>(inProp);
+      auto structProp = CastField<FStructProperty>(inProp);
       if (!inMayForward && !structProp->HasAnyPropertyFlags(CPF_ReturnParm | CPF_OutParm | CPF_ReferenceParm)) {
         this->touchStruct(structProp->Struct, inClass);
       } else {
         this->touchStruct(structProp->Struct, nullptr);
       }
     } else if (inProp->IsA<FNumericProperty>()) {
-      auto numeric = Cast<FNumericProperty>(inProp);
+      auto numeric = CastField<FNumericProperty>(inProp);
       UEnum *uenum = numeric->GetIntPropertyEnum();
       if (nullptr != uenum) {
         // is enum
         this->touchEnum(uenum, inClass);
       }
     } else if (inProp->IsA<FEnumProperty>()) {
-      auto enumProp = Cast<FEnumProperty>(inProp);
+      auto enumProp = CastField<FEnumProperty>(inProp);
       UEnum *uenum = enumProp->GetEnum();
       if (nullptr != uenum) {
         // is enum
         this->touchEnum(uenum, inClass);
       }
     } else if (inProp->IsA<FArrayProperty>()) {
-      auto prop = Cast<FArrayProperty>(inProp);
+      auto prop = CastField<FArrayProperty>(inProp);
       touchProperty(prop->Inner, inClass, inMayForward);
     } else if (inProp->IsA<FDelegateProperty>()) {
-      auto prop = Cast<FDelegateProperty>(inProp);
+      auto prop = CastField<FDelegateProperty>(inProp);
       touchDelegate(prop->SignatureFunction, inClass);
     } else if (inProp->IsA<FMulticastDelegateProperty>()) {
-      auto prop = Cast<FMulticastDelegateProperty>(inProp);
+      auto prop = CastField<FMulticastDelegateProperty>(inProp);
       touchDelegate(prop->SignatureFunction, inClass);
     }
   }

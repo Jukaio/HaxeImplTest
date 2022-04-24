@@ -1,0 +1,6 @@
+-cp src
+-cp interp
+-cp ../../
+--interp
+-main uhx.build.Main
+--macro uhx.build.ConfigHelper.init()

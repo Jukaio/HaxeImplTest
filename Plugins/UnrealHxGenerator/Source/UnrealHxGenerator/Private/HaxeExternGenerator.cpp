@@ -402,8 +402,12 @@ FString FHaxeGenerator::getHeaderPath(UPackage *inPack, const FString& inPath) {
 // Done
 void FHaxeGenerator::generateFields(UStruct *inStruct, bool onlyProps = false) {
   UClass *uclass = nullptr;
+  TArray<UFunction*> methods;
   if (inStruct->IsA<UClass>()) {
     uclass = Cast<UClass>(inStruct);
+    for (TFieldIterator<UFunction> invFields(uclass, EFieldIteratorFlags::ExcludeSuper); invFields; ++invFields) {
+        methods.Push(*invFields);
+    }
   }
   auto wasEditorOnlyData = false;
   auto wasEditorOnly = false;
@@ -411,6 +415,7 @@ void FHaxeGenerator::generateFields(UStruct *inStruct, bool onlyProps = false) {
   for (TFieldIterator<FField> invFields(inStruct, EFieldIteratorFlags::ExcludeSuper); invFields; ++invFields) {
     fields.Push(*invFields);
   } 
+  // Generate common fields/properties
   while (fields.Num() > 0) {
     // reverse field iterator so fields are declared in the same order as C++ code
     auto field = fields.Pop(false);
@@ -424,7 +429,7 @@ void FHaxeGenerator::generateFields(UStruct *inStruct, bool onlyProps = false) {
         m_buf << TEXT("#end // WITH_EDITOR") << Newline();
         wasEditorOnly = false;
       }
-
+      
       if ((prop->HasAnyFlags(RF_Public) || prop->HasAnyPropertyFlags(CPF_Protected)) && upropType(prop, type)) {
         auto isEditorOnlyData = prop->HasAnyPropertyFlags(CPF_EditorOnly);
         if (isEditorOnlyData != wasEditorOnlyData) {
@@ -459,7 +464,7 @@ void FHaxeGenerator::generateFields(UStruct *inStruct, bool onlyProps = false) {
         // TODO see if the property is read-only; this might not be supported by UHT atm?
         m_buf << TEXT(" : ") << type << TEXT(";") << Newline();
       } 
-    } /* else if (field->IsA<UFunction>()) { // TODO: UNCOMMENT AND FIX
+    } /* else if (field->IsA<UFunction>()) { // TODO: This case should be straight up impossible!
       auto func = Cast<UFunction>(field);
       if (onlyProps && (func->FunctionFlags & FUNC_RequiredAPI) == 0) {
         continue;
@@ -574,10 +579,141 @@ void FHaxeGenerator::generateFields(UStruct *inStruct, bool onlyProps = false) {
         }
         m_buf << curBuf.toString() << Newline();
       }
-    } */ else {
+    }  */ else {
       UE_LOG(LogHaxeExtern, Warning, TEXT("Field %s is not a UFUNCTION or UPROERTY"), *field->GetName());
     } 
   }
+  
+  // Generate Functions
+  while (methods.Num() > 0)
+  {
+      auto func = methods.Pop(false);
+      if (onlyProps && (func->FunctionFlags & FUNC_RequiredAPI) == 0) {
+          continue;
+      }
+      LOG("Starting to generate %s (flags %x)", *func->GetName(), (int)func->FunctionFlags);
+      if (this->m_generatedFields.Contains(func->GetName())) {
+          LOG("continuing %s %s", *uclass->GetName(), *func->GetOwnerClass()->GetName());
+          // we don't need to generate overridden functions' glue code
+          continue;
+      }
+      else if (func->HasAnyFunctionFlags(FUNC_Private | FUNC_Delegate)) {
+          // we can't access private functions
+          // Delegate signatures are a weird piece of code that don't seem to be exported
+          continue;
+      }
+      auto isEditorOnly = func->HasAnyFunctionFlags(FUNC_EditorOnly);
+      if (wasEditorOnlyData) {
+          m_buf << TEXT("#end // WITH_EDITORONLY_DATA") << Newline();
+          wasEditorOnlyData = false;
+      }
+      if (isEditorOnly != wasEditorOnly) {
+          if (isEditorOnly) {
+              m_buf << TEXT("#if WITH_EDITOR") << Newline();
+          }
+          else {
+              m_buf << TEXT("#end // WITH_EDITOR") << Newline();
+          }
+          wasEditorOnly = isEditorOnly;
+      }
+
+      this->m_generatedFields.Add(func->GetName());
+      // we need to create a local buffer because we will only know if we should
+      // generate this function in the end of its processing
+      FHelperBuf curBuf;
+
+      curBuf << TEXT("@:ufunction");
+      auto flags = getUFunctionFlags(func);
+      if (flags.Num() != 0) {
+          curBuf << TEXT("(") << FString::Join(flags, TEXT(", ")) << TEXT(") ");
+      }
+      else {
+          curBuf << TEXT(" ");
+      }
+      if (func->HasAnyFunctionFlags(FUNC_Const)) {
+          curBuf << TEXT("@:thisConst ");
+      }
+
+      LOG("Generating %s (flags %x)", *func->GetName(), (int)func->FunctionFlags);
+      if (func->HasAnyFunctionFlags(FUNC_Static)) {
+          curBuf << TEXT("static ");
+      }
+      else if (func->HasAnyFunctionFlags(FUNC_Final)) {
+          curBuf << TEXT("@:final ");
+      }
+      curBuf << (func->HasAnyFunctionFlags(FUNC_Public) ? TEXT("public function ") : TEXT("private function ")) << func->GetName() << TEXT("(");
+      auto first = true;
+      auto shouldExport = true;
+      bool hasReturnValue = false;
+      for (TFieldIterator<FProperty> params(func); params; ++params) {
+          check(!hasReturnValue);
+          auto param = *params;
+          FString type;
+          if (upropType(param, type)) {
+              if (param->HasAnyPropertyFlags(CPF_ReturnParm)) {
+                  hasReturnValue = true;
+                  curBuf << TEXT(") : ") << type;
+              }
+              else {
+                  if (first) first = false; else curBuf << TEXT(", ");
+                  bool escapeDefault = false;
+                  auto defaultValue = func->GetMetaData(*(FString(TEXT("CPP_Default_")) + param->GetName()));
+                  if (!defaultValue.IsEmpty()) {
+                      if (param->IsA<FNumericProperty>()
+                          || param->IsA<FBoolProperty>()
+                          )
+                      {
+                          // do nothing - defaultValue will be consumed later
+                      }
+                      else if (defaultValue == FString(TEXT("nullptr")) || defaultValue == FString(TEXT("NULL")) || defaultValue == FString(TEXT("null"))) {
+                          defaultValue = FString("null");
+                      }
+                      else {
+                          curBuf << TEXT("@:opt(\"") << Escaped(defaultValue) << TEXT("\") ");
+                          defaultValue = FString();
+                      }
+                  }
+                  else if (!((defaultValue = func->GetMetaData(*param->GetName())).IsEmpty())) {
+                      curBuf << TEXT("@:bpopt(\"") << Escaped(defaultValue) << TEXT("\") ");
+                      defaultValue = FString();
+                  }
+                  curBuf << param->GetNameCPP() << TEXT(" : ") << type;
+                  if (!defaultValue.IsEmpty()) {
+                      curBuf << TEXT(" = ");
+                      if (escapeDefault) {
+                          curBuf << TEXT("\"") << Escaped(defaultValue) << TEXT("\"");
+                      }
+                      else {
+                          curBuf << defaultValue;
+                      }
+                  }
+              }
+          }
+          else {
+              shouldExport = false;
+              break;
+          }
+      }
+      if (!hasReturnValue) {
+          curBuf << TEXT(") : Void;");
+      }
+      else {
+          curBuf << TEXT(";");
+      }
+      if (shouldExport) {
+          // seems like UHT doesn't support editor-only ufunctions
+          if (wasEditorOnlyData) {
+              wasEditorOnlyData = false;
+              m_buf << TEXT("#end // WITH_EDITORONLY_DATA") << Newline();
+          }
+          auto& fnComment = func->GetMetaData(TEXT("ToolTip"));
+          if (!fnComment.IsEmpty()) {
+              m_buf << Comment(fnComment);
+          }
+          m_buf << curBuf.toString() << Newline();
+      }
+  }
+  
   if (wasEditorOnlyData) {
     wasEditorOnlyData = false;
     m_buf << TEXT("#end // WITH_EDITORONLY_DATA") << Newline();
@@ -589,9 +725,13 @@ void FHaxeGenerator::generateFields(UStruct *inStruct, bool onlyProps = false) {
 }
 
 void FHaxeGenerator::collectSuperFields(UStruct *inSuper) {
-  for (TFieldIterator<UField> fields(inSuper, EFieldIteratorFlags::IncludeSuper); fields; ++fields) {
+  for (TFieldIterator<FField> fields(inSuper, EFieldIteratorFlags::IncludeSuper); fields; ++fields) {
     auto field = *fields;
     this->m_generatedFields.Add(field->GetName());
+  }
+  for (TFieldIterator<UField> fields(inSuper, EFieldIteratorFlags::IncludeSuper); fields; ++fields) {
+      auto field = *fields;
+      this->m_generatedFields.Add(field->GetName());
   }
 }
 

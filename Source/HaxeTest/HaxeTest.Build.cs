@@ -2,7 +2,7 @@
 
 using UnrealBuildTool;
 
-public class HaxeTest : ModuleRules
+public class HaxeTest : HaxeModuleRules
 {
 	public HaxeTest(ReadOnlyTargetRules Target) : base(Target)
 	{

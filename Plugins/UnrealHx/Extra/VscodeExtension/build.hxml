@@ -1,0 +1,11 @@
+-cp Source
+-cp ../../Haxe/BuildTool/src
+-cp ../../Haxe/BuildTool/interp
+# -lib vscode-extern:git:https://github.com/vshaxe/vscode-extern.git#dfbdc45aa4164910ca308fac321f8584fe041f11
+-lib vscode:1.37.0
+-lib continuation:git:https://github.com/proletariatgames/haxe-continuation.git#492fc9fbdb15ec184dd23e334195400c401d3ac7
+-lib vshaxe
+-dce no
+-js Binaries/uhx.js
+-debug
+Main

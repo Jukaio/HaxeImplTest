@@ -1,0 +1,12 @@
+# this file is only here to provide IDE completion information and test
+# for the basic /Static build
+-cp ../../../Haxe/Generated/Externs_Editor
+-cp ./Static
+-cpp bin/dummy
+--no-output
+-D BUILDTOOL_VERSION_LEVEL=5
+-D static_link
+-D no-copt
+-D WITH_CPPIA
+-D UHX_DISPLAY
+-main UnrealInit

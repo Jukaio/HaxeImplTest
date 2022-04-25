@@ -223,7 +223,8 @@ class ExternBaker {
                 FileSystem.createDirectory(dir);
               }
               catch (e:Dynamic) {
-                trace('failed when creating $dir: there might be a race condition');
+                // TODO: REACTIVATE TRACE LATER
+                //trace('failed when creating $dir: there might be a race condition');
               }
             }
 
@@ -247,8 +248,9 @@ class ExternBaker {
         if (!FileSystem.exists(dir)) {
           try {
             FileSystem.createDirectory(dir);
-            trace('failed when creating $dir: there might be a race condition');
           } catch(e:Dynamic) {
+            // TODO: REACTIVATE TRACE LATER
+            //trace('failed when creating $dir: there might be a race condition');
           }
         }
 

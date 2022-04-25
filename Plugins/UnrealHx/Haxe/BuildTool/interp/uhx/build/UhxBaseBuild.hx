@@ -163,7 +163,7 @@ class UhxBaseBuild {
   static function makeArgsFromObj(obj:Dynamic, out:Array<String>) {
     for (field in Reflect.fields(obj)) {
       var arg = Reflect.field(obj, field);
-      if (Std.is(arg, String) || Std.is(arg, Float) || Std.is(arg, Bool))
+      if (Std.isOfType(arg, String) || Std.isOfType(arg, Float) || Std.isOfType(arg, Bool))
       {
         out.push('$field=${arg}');
       } else {
@@ -292,7 +292,7 @@ class UhxBaseBuild {
       if (data != null) {
         for (field in Reflect.fields(data)) {
           var val:Dynamic = Reflect.field(data, field);
-          if (Std.is(val, Array)) {
+          if (Std.isOfType(val, Array)) {
             var old:Array<Dynamic> = Reflect.field(base, field);
             if (old != null && Std.is(old, Array)) {
               val = old.concat(val);

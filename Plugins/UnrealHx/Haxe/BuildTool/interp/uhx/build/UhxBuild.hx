@@ -1135,7 +1135,7 @@ class UhxBuild extends UhxBaseBuild {
       for (arg in defines.keys()) {
         if (!toIgnore.exists(arg)) {
           var def = defines[arg];
-          if (Std.is(def, String) || Std.is(def, Float) || Std.is(def, Bool))
+          if (Std.isOfType(def, String) || Std.isOfType(def, Float) || Std.isOfType(def, Bool))
           {
             args.push('-D $arg=${def}');
           } else {

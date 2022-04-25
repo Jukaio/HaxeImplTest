@@ -1,6 +1,6 @@
 package unreal;
 
-import unreal.assetregistry.*;
+//import unreal.assetregistry.*;
 
 extern class UAssetManager_Extra {
 	public static function Get() : PRef<UAssetManager>;
@@ -19,7 +19,7 @@ extern class UAssetManager_Extra {
 	@:thisConst public function GetPrimaryAssetIdForPath(ObjectPath:Const<PRef<FSoftObjectPath>>):FPrimaryAssetId;
 
 	/** Gets list of all FAssetData for a primary asset type, returns true if any were found */
-	public function GetPrimaryAssetDataList(PrimaryAssetType:FPrimaryAssetType, PrimaryAssetList:PRef<TArray<unreal.assetregistry.FAssetData>>) : Bool;
+	public function GetPrimaryAssetDataList(PrimaryAssetType:FPrimaryAssetType, PrimaryAssetList:PRef<TArray<unreal.FAssetData>>) : Bool;
 
 	/** Sees if the passed in object is a registered primary asset, if so return it. Returns invalid Identifier if not found */
 	@:thisConst public function GetPrimaryAssetIdForObject(Object:UObject) : FPrimaryAssetId;

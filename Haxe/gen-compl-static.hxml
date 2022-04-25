@@ -1,0 +1,41 @@
+# this file is here for convenience only (e.g. to make your IDE work or to compile without invoking UE4 Build)
+# this is not used by the build pipeline, and is recommended to be ignored by your SCM
+# please change "arguments.hxml" instead
+
+--cwd C:\Users\jukai\Documents\Unreal Projects\HaxeTest/Haxe
+--no-output
+-D UHX_DISPLAY
+arguments.hxml
+-cp C:\Users\jukai\Documents\Unreal Projects\HaxeTest/Haxe/Generated/Extern_Editor_Win64
+-cp C:\Users\jukai\Documents\Unreal Projects\HaxeTest\Plugins\UnrealHx/Haxe/Static
+-cp C:\Users\jukai\Documents\Unreal Projects\HaxeTest/Haxe/Static
+
+-main UnrealInit
+
+-D static_link
+-D destination=C:\Users\jukai\Documents\Unreal Projects\HaxeTest/Intermediate/Haxe/HaxeTest-Win-Development-Editor/haxeruntime.lib
+-D UHX_UNREAL_SOURCE_DIR=C:\Users\jukai\Documents\Unreal Projects\HaxeTest/Source/HaxeTest
+-D UHX_PLUGIN_PATH=C:\Users\jukai\Documents\Unreal Projects\HaxeTest\Plugins\UnrealHx
+-D UHX_UE_CONFIGURATION=Development
+-D UHX_UE_TARGET_TYPE=Editor
+-D UHX_UE_TARGET_PLATFORM=Win64
+-D UHX_BAKE_DIR=C:\Users\jukai\Documents\Unreal Projects\HaxeTest/Haxe/Generated/Extern_Editor_Win64
+-D UHX_BUILD_NAME=HaxeTest-Win-Development-Editor
+-D HXCPP_DLL_EXPORT
+-D UE_VER=4.27
+-D UE_PATCH=2
+-cpp C:\Users\jukai\Documents\Unreal Projects\HaxeTest/Intermediate/Haxe/HaxeTest-Win-Development-Editor/Static
+-D WITH_SERVER_CODE
+-D WITH_EDITOR
+-D WITH_EDITORONLY_DATA
+-D UE_EDITOR
+-D UE_BUILD_DEVELOPMENT
+-D PLATFORM_WINDOWS
+-dce no
+-debug
+-D HXCPP_M64
+-D HXCPP_DEBUG_LINK
+-D ABI=-MD
+-D scriptable
+-D WITH_CPPIA
+-D BUILDTOOL_VERSION_LEVEL=13
